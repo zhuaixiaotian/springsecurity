@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -18,7 +20,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtAuthenticationTokenFilter JwtAuthenticationTokenFilter;
+    @Autowired
+    private AuthenticationEntryPoint authenticationEntryPoint;
 
+    @Autowired
+    private AccessDeniedHandler accessDeniedHandler;
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
@@ -35,10 +41,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 // 对于登录接口 允许匿名访问
                 .antMatchers("/login").anonymous()
+               // 配置权限 .antMatchers("/login").hasAuthority("system:test:list")
                 // 除上面外的所有请求全部需要鉴权认证
                 .anyRequest().authenticated();
 
         http.addFilterBefore(JwtAuthenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
+            //配置认证和授权失败的处理
+        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).
+                accessDeniedHandler(accessDeniedHandler);
+
+        http.cors();
     }
 
     @Bean
